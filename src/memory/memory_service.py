@@ -3,7 +3,7 @@ import sqlite3
 class MemoryService:
 
     def __init__(self):
-        self.connection = sqlite3.connect("src/database/chat.db");
+        self.connection = sqlite3.connect("src/database/chat.db", check_same_thread=False);
         self.cursor = self.connection.cursor();
         self.create_tables();
 
@@ -40,6 +40,11 @@ class MemoryService:
                             SET title = ?
                             WHERE id = ?""", (title, conversation_id))
         self.connection.commit()
+        print(
+            "UPDATE TITLE",
+            conversation_id,
+            title
+        )
         conversation_id = self.cursor.lastrowid
         return conversation_id
     
@@ -53,6 +58,7 @@ class MemoryService:
         return rows
 
     def save_message(self, conversation_id, role, content):
+        print("conversation id", conversation_id, role, content)
         self.cursor.execute("""
             INSERT INTO messages (conversation_id, role, content)
             VALUES (?,?,?)
@@ -80,6 +86,11 @@ class MemoryService:
 
 
     def clear_messages(self, conversation_id):
+        self.cursor.execute("""
+                            DELETE FROM conversations
+                            WHERE id =?
+                            """, (conversation_id,))
+        self.connection.commit()
         self.cursor.execute("""
                         DELETE FROM messages
                         WHERE conversation_id = ?

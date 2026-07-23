@@ -1,42 +1,46 @@
-from config import SYSTEM_PROMPT
-
 
 class ChatService:
 
-    def __init__(self, provider, memory):
-
+    def __init__(self, provider, memory, agent):
         self.provider = provider
         self.memory = memory
-    
+        self.agent = agent
+
     def create_new_chat(self):
         return self.memory.create_conversation()
-    
+
     def rename_chat(self, conversation_id, title):
-        return self.memory.update_conversation_title(conversation_id, title)
-    
+        return self.memory.update_conversation_title(
+            conversation_id,
+            title
+        )
+
+    def delete_conversation(self, conversation_id):
+        return self.memory.clear_messages(conversation_id)
+
     def list_chats(self):
         return self.memory.load_conversations()
-    
+
     def load_messages(self, conversation_id):
         return self.memory.load_messages(conversation_id)
-
-
-    def chat(self, conversation_id,  user_input):
+    
+    def chat(self, conversation_id, user_input):
 
         if user_input.lower() == "/clear":
             self.memory.clear_messages(conversation_id)
-            return "conversation removed. let start fresh"
+            return "conversation removed. let's start fresh"
 
-        self.memory.save_message( conversation_id, "user", user_input)
-        messages = self.memory.load_messages(conversation_id)
-        messages.insert(0, { 'role': 'system', 'content': SYSTEM_PROMPT })
+        is_first_message = (
+            len(self.memory.load_messages(conversation_id)) == 0
+        )
 
-        reply = self.provider.chat(messages)
+        final_reply = self.agent.run(
+            conversation_id,
+            user_input
+        )
 
-        self.memory.save_message(conversation_id, "assistant", reply)
-
-        if(len(messages) == 2):
+        if is_first_message:
             title = self.provider.generate_title(user_input)
             self.rename_chat(conversation_id, title)
 
-        return reply
+        return final_reply

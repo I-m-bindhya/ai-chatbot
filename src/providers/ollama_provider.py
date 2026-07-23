@@ -1,17 +1,37 @@
 from ollama import chat
+from src.util.json_parser import AIResponse, JsonParser, ToolCall
+from src.config import MODEL_NAME
 
-from config import MODEL_NAME
-
+json_parser = JsonParser()
 
 class OllamaProvider:
 
-    def chat(self, messages):
+    def chat(self, messages, tools=None):
         response = chat(
             model=MODEL_NAME,
-            messages=messages
+            messages=messages,
+            tools=tools
         )
 
-        return response.message.content
+        print("reponse from model", response)
+
+        if response.message.tool_calls:
+
+            tool = response.message.tool_calls[0]
+
+            return AIResponse(
+                tool_call = ToolCall(
+                    tool=tool.function.name,
+                    arguments=tool.function.arguments
+                )
+            )
+
+        reply = response.message.content
+        try:
+            return json_parser.parse(reply)
+        except (TypeError, ValueError):
+            return AIResponse(answer=reply)
+
     
     def generate_title(self, message):
         response = chat(
@@ -24,4 +44,5 @@ class OllamaProvider:
             ]
         )
 
-        return response.message.content
+        reply = response.message.content
+        return reply
