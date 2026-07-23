@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from src.context.context_builder import ContextBuilder
 from src.memory.memory_manager import MemoryManager
 from src.agents.ai_agent import AIAgent
 from src.providers.ollama_provider import OllamaProvider
@@ -22,13 +23,14 @@ class ConversationRequest(BaseModel):
 
 router = APIRouter()
 provider = OllamaProvider()
-memory = MemoryService()
-memory_manager = MemoryManager(memory)
+memory_service = MemoryService()
+memory_manager = MemoryManager(memory_service)
+context_builder = ContextBuilder(memory_manager)
 registry = ToolRegistry()
 
-agent = AIAgent(provider, registry, builder, adapter, memory_manager, memory)
+agent = AIAgent(provider, registry, builder, adapter, memory_service, )
 
-chatbot = ChatService(provider, memory, agent)
+chatbot = ChatService(provider, memory_service, agent)
 chat_tools = ChatTools(chatbot)
 
 registry.register(chat_tools.get_tools())

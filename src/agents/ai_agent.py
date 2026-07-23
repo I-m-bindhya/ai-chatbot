@@ -6,15 +6,15 @@ class AIAgent:
         registry,
         prompt_builder,
         tool_adapter,
-        memory_manager,
-        memory_service
+        memory_service,
+        context_builder
     ):
         self.provider = provider
         self.registry = registry
         self.prompt_builder = prompt_builder
         self.tool_adapter = tool_adapter
-        self.memory_manager = memory_manager
         self.memory_service = memory_service
+        self.context_builder = context_builder
 
 
     def execute_tool_call(
@@ -43,22 +43,21 @@ class AIAgent:
         conversation_id,
         user_message
     ):
-        
-        messages = self.memory_manager.build_context(
-            conversation_id
+
+        messages = self.context_builder.build_context(
+            conversation_id,
+            user_message
         )
 
-        user_message_data = {
+        user_message_record  = {
             "role": "user",
             "content": user_message
-        }        
+        }      
 
         self.memory_service.save_message(
             conversation_id,
-            **user_message_data
+            **user_message_record 
         )
-
-        messages.append(user_message_data)
 
         tools = self.tool_adapter.adapt(
             self.registry.get_tools()
