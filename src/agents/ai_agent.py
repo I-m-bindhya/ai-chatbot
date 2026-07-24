@@ -7,7 +7,8 @@ class AIAgent:
         prompt_builder,
         tool_adapter,
         memory_service,
-        context_builder
+        context_builder,
+        indexing_service
     ):
         self.provider = provider
         self.registry = registry
@@ -15,6 +16,7 @@ class AIAgent:
         self.tool_adapter = tool_adapter
         self.memory_service = memory_service
         self.context_builder = context_builder
+        self.indexing_service = indexing_service
 
 
     def execute_tool_call(
@@ -24,8 +26,6 @@ class AIAgent:
     ):
 
         arguments = dict(tool_call.arguments)
-
-        arguments["conversation_id"] = conversation_id
 
         result = self.registry.execute(
             tool_call.tool,
@@ -54,9 +54,20 @@ class AIAgent:
             "content": user_message
         }      
 
-        self.memory_service.save_message(
+        message_id = self.memory_service.save_message(
             conversation_id,
             **user_message_record 
+        )
+
+        self.indexing_service.index(
+            message_id,
+            user_message,
+            {
+                "conversation_id": conversation_id,
+                "message_id": message_id,
+                "role": "user",
+                "content": user_message
+            }
         )
 
         tools = self.tool_adapter.adapt(

@@ -1,6 +1,7 @@
 MODEL_NAME = "qwen2.5:7b"
 
 SYSTEM_PROMPT = """
+Use tools only when needed.
 The requested tool has already been executed.
 Never call another tool.
 You are an AI Instructor for experienced Python backend developers.

@@ -1,36 +1,77 @@
 from qdrant_client import QdrantClient
+from qdrant_client.models import (
+    VectorParams,
+    Distance,
+    PointStruct
+)
 
-from .vector_store import VectorStore
+from src.retrieval.vector_store import VectorStore
 
 
 class QdrantStore(VectorStore):
 
-    def __init__(
-        self,
-        host="localhost",
-        port=6333,
-        collection_name="documents"
-    ):
+    COLLECTION_NAME = "chat_memory"
+
+    def __init__(self):
 
         self.client = QdrantClient(
-            host=host,
-            port=port
+            host="localhost",
+            port=6333
         )
 
-        self.collection_name = collection_name
+        self._create_collection()
 
+    def _create_collection(self):
 
-    def upsert(
-        self,
-        vector,
-        payload
-    ):
-        pass
+        collections = self.client.get_collections()
 
+        exists = any(
+            collection.name == self.COLLECTION_NAME
+            for collection in collections.collections
+        )
+
+        if exists:
+            return
+
+        self.client.create_collection(
+            collection_name=self.COLLECTION_NAME,
+            vectors_config=VectorParams(
+                size=768,
+                distance=Distance.COSINE
+            )
+        )
 
     def search(
         self,
         vector,
         limit=5
     ):
-        pass
+
+        response = self.client.query_points(
+            collection_name=self.COLLECTION_NAME,
+            query=vector,
+            limit=limit
+        )
+
+        return [
+            point.payload
+            for point in response.points
+        ]
+
+    def upsert(
+        self,
+        point_id,
+        vector,
+        payload
+    ):
+
+        self.client.upsert(
+            collection_name=self.COLLECTION_NAME,
+            points=[
+                PointStruct(
+                    id=point_id,
+                    vector=vector,
+                    payload=payload
+                )
+            ]
+        )

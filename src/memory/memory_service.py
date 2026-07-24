@@ -64,6 +64,7 @@ class MemoryService:
             VALUES (?,?,?)
         """, (conversation_id, role, content))
         self.connection.commit()
+        return self.cursor.lastrowid
         
 
     def load_messages(self, conversation_id):

@@ -1,4 +1,9 @@
 from fastapi import APIRouter
+from src.retrieval.indexing_service import IndexingService
+from src.retrieval.vector_store import VectorStore
+from src.retrieval.retrieval_service import RetrievalService
+from src.retrieval.embedding_service import EmbeddingService
+from src.retrieval.qdrant_store import QdrantStore
 from src.context.context_builder import ContextBuilder
 from src.memory.memory_manager import MemoryManager
 from src.agents.ai_agent import AIAgent
@@ -25,11 +30,13 @@ router = APIRouter()
 provider = OllamaProvider()
 memory_service = MemoryService()
 memory_manager = MemoryManager(memory_service)
-context_builder = ContextBuilder(memory_manager)
+store = QdrantStore()
+embedding = EmbeddingService()
+retrieval_service = RetrievalService(embedding, store)
+context_builder = ContextBuilder(memory_manager, retrieval_service)
 registry = ToolRegistry()
-
-agent = AIAgent(provider, registry, builder, adapter, memory_service, )
-
+indexing_service = IndexingService(embedding, store)
+agent = AIAgent(provider, registry, builder, adapter, memory_service, context_builder,indexing_service )
 chatbot = ChatService(provider, memory_service, agent)
 chat_tools = ChatTools(chatbot)
 

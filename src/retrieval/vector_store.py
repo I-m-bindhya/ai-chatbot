@@ -6,6 +6,7 @@ class VectorStore(ABC):
     @abstractmethod
     def upsert(
         self,
+        point_id,
         vector,
         payload
     ):

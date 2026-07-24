@@ -1,7 +1,8 @@
 class ContextBuilder:
 
-    def __init__(self, memory_manager):
+    def __init__(self, memory_manager, retrieval_service):
         self.memory_manager = memory_manager
+        self.retrieval_service = retrieval_service
 
 
     def build_context(
@@ -12,11 +13,33 @@ class ContextBuilder:
         tool_messages=None
     ):
 
-        messages = list(
+        messages = []
+
+        retrieved_documents = self.retrieval_service.retrieve(
+            user_message
+        )
+
+        if retrieved_documents:
+
+            for doc in retrieved_documents:
+
+                content = doc.get(
+                    "content",
+                    doc.get("text")
+                )
+
+                messages.append(
+                    {
+                        "role": "system",
+                        "content": f"Relevant memory: {content}"
+                    }
+                )
+
+        messages.extend(list(
             self.memory_manager.build_context(
                 conversation_id
             )
-        )
+        ))
 
         messages.append(
             {
