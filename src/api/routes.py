@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from src.memory.memory_important_service import MemoryImportanceService
 from src.retrieval.indexing_service import IndexingService
 from src.retrieval.vector_store import VectorStore
 from src.retrieval.retrieval_service import RetrievalService
@@ -36,7 +37,8 @@ retrieval_service = RetrievalService(embedding, store)
 context_builder = ContextBuilder(memory_manager, retrieval_service)
 registry = ToolRegistry()
 indexing_service = IndexingService(embedding, store)
-agent = AIAgent(provider, registry, builder, adapter, memory_service, context_builder,indexing_service )
+memory_important_service = MemoryImportanceService()
+agent = AIAgent(provider, registry, builder, adapter, memory_service, context_builder,indexing_service, memory_important_service)
 chatbot = ChatService(provider, memory_service, agent)
 chat_tools = ChatTools(chatbot)
 

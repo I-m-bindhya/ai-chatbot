@@ -6,6 +6,11 @@ from qdrant_client.models import (
 )
 
 from src.retrieval.vector_store import VectorStore
+from qdrant_client.models import (
+    Filter,
+    FieldCondition,
+    MatchValue
+)
 
 
 class QdrantStore(VectorStore):
@@ -43,6 +48,7 @@ class QdrantStore(VectorStore):
 
     def search(
         self,
+        conversation_id,
         vector,
         limit=5
     ):
@@ -50,13 +56,29 @@ class QdrantStore(VectorStore):
         response = self.client.query_points(
             collection_name=self.COLLECTION_NAME,
             query=vector,
+            query_filter=Filter(
+                must=[
+                    FieldCondition(
+                        key="conversation_id",
+                        match=MatchValue(
+                            value=conversation_id
+                        )
+                    )
+                ]
+            ),
             limit=limit
         )
+        results = []
 
-        return [
-            point.payload
-            for point in response.points
-        ]
+        for point in response.points:
+            results.append(
+                {
+                    "score": point.score,
+                    "payload": point.payload
+                }
+            )
+
+        return results
 
     def upsert(
         self,

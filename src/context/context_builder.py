@@ -16,6 +16,7 @@ class ContextBuilder:
         messages = []
 
         retrieved_documents = self.retrieval_service.retrieve(
+            conversation_id,
             user_message
         )
 

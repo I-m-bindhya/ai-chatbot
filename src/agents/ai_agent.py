@@ -8,7 +8,8 @@ class AIAgent:
         tool_adapter,
         memory_service,
         context_builder,
-        indexing_service
+        indexing_service,
+        memory_important_service
     ):
         self.provider = provider
         self.registry = registry
@@ -17,6 +18,7 @@ class AIAgent:
         self.memory_service = memory_service
         self.context_builder = context_builder
         self.indexing_service = indexing_service
+        self.memory_important_service = memory_important_service
 
 
     def execute_tool_call(
@@ -59,16 +61,17 @@ class AIAgent:
             **user_message_record 
         )
 
-        self.indexing_service.index(
-            message_id,
-            user_message,
-            {
-                "conversation_id": conversation_id,
-                "message_id": message_id,
-                "role": "user",
-                "content": user_message
-            }
-        )
+        if self.memory_important_service.should_store(user_message):
+            self.indexing_service.index(
+                message_id,
+                user_message,
+                {
+                    "conversation_id": conversation_id,
+                    "message_id": message_id,
+                    "role": "user",
+                    "content": user_message
+                }
+            )
 
         tools = self.tool_adapter.adapt(
             self.registry.get_tools()

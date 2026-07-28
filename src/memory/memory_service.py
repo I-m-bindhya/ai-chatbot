@@ -12,6 +12,16 @@ class MemoryService:
                             CREATE TABLE IF NOT EXISTS conversations(
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             title TEXT NOT NULL)""")
+
+        self.cursor.execute("""
+                            CREATE TABLE IF NOT EXISTS summaries(
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            conversation_id INTEGER NOT NULL UNIQUE,
+                            summary TEXT NOT NULL,
+
+                            FOREIGN KEY(conversation_id)
+                            REFERENCES conversations(id)                            
+                            )""")
         
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS messages (
@@ -97,3 +107,38 @@ class MemoryService:
                         WHERE conversation_id = ?
                         """, (conversation_id,))
         self.connection.commit()
+
+
+    def save_summary(
+        self,
+        conversation_id,
+        summary
+    ):
+        self.cursor.execute("""
+                INSERT INTO summaries (
+                    conversation_id,
+                    summary
+                )
+                VALUES (?, ?)
+                ON CONFLICT(conversation_id)
+                DO UPDATE SET
+                summary = excluded.summary;
+            """, (conversation_id, summary))
+
+        self.connection.commit()
+        summary_id  = self.cursor.fetchone()[0]
+        return summary_id;
+        
+
+    def load_summary(
+        self,
+        conversation_id
+    ):
+
+        self.cursor.execute("""
+                    SELECT id, summaries
+                    FROM summary
+                    WHERE conversation_id = ?
+                    """, (conversation_id, ))
+        rows = self.cursor.fetchall()
+        return rows

@@ -46,3 +46,18 @@ class OllamaProvider:
 
         reply = response.message.content
         return reply
+
+
+    def generate_summary(self, message):
+        response = chat(
+            model=MODEL_NAME,
+            messages= [
+                {
+                    "role": "user",
+                    "content": f"Summarize the following conversation.\n\n Keep only long-term facts.\n\n Conversations: \n {message}"
+                }
+            ]
+        )
+
+        reply = response.message.content
+        return reply

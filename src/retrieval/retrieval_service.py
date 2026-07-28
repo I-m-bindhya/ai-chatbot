@@ -11,6 +11,7 @@ class RetrievalService:
 
     def retrieve(
         self,
+        conversation_id,
         question,
         limit=5
     ):
@@ -19,7 +20,18 @@ class RetrievalService:
             question
         )
 
-        return self.vector_store.search(
+        results = self.vector_store.search(
+            conversation_id,
             vector,
             limit
         )
+
+        MIN_SCORE = 0.80
+
+        filtered = []
+
+        for result in results:
+            if result["score"] >= MIN_SCORE:
+                filtered.append(result["payload"])
+
+        return filtered
