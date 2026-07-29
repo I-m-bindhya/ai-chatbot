@@ -1,3 +1,6 @@
+from src.util.exception import ToolExecutionError
+
+
 class ToolRegistry:
 
     def __init__(self):
@@ -11,8 +14,13 @@ class ToolRegistry:
         return list(self.tools.values())
     
     def execute(self, tool_name, arguments):
-        tool = self.tools[tool_name]
-        function = tool["function"]
-        return function(**arguments)
+        try:
+            tool = self.tools[tool_name]
+            function = tool["function"]
+            return function(**arguments)
+        except Exception as ex:
+            raise ToolExecutionError(
+                f"{tool_name}: {ex}"
+            )
     
     

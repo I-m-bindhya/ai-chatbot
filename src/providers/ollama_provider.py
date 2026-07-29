@@ -1,6 +1,7 @@
 from ollama import chat
 from src.util.json_parser import AIResponse, JsonParser, ToolCall
 from src.config import MODEL_NAME
+from src.util.exception import ProviderError
 
 json_parser = JsonParser()
 
@@ -32,7 +33,19 @@ class OllamaProvider:
         except (TypeError, ValueError):
             return AIResponse(answer=reply)
 
-    
+
+    def chat_raw(self, messages):
+        try:
+            response = chat(
+                model=MODEL_NAME,
+                messages=messages
+            )
+
+            # return response.message.content
+            raise ProviderError("Testing Provider Error")
+        except Exception as ex:
+            raise ProviderError(str(ex))
+
     def generate_title(self, message):
         response = chat(
             model=MODEL_NAME,

@@ -1,3 +1,6 @@
+from src.util.exception import RetrievalError
+
+
 class RetrievalService:
 
     def __init__(
@@ -20,11 +23,15 @@ class RetrievalService:
             question
         )
 
-        results = self.vector_store.search(
-            conversation_id,
-            vector,
-            limit
-        )
+        try: 
+            results = self.vector_store.search(
+                conversation_id,
+                vector,
+                limit
+            )
+
+        except Exception as ex:
+            raise RetrievalError(str(ex))
 
         MIN_SCORE = 0.80
 
