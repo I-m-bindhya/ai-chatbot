@@ -1,4 +1,4 @@
-from src.prompt.schema import PLANNING_PROMPT, REFLECTION_PROMPT, TOOL_PROMPT, SUMMARY_PROMPT
+from src.prompt.schema import IMPROVEMENT_PROMPT, PLANNING_PROMPT, REFLECTION_PROMPT, TOOL_PROMPT, SUMMARY_PROMPT
 from src.config import SYSTEM_PROMPT
 
 class PromptBuilder():
@@ -43,12 +43,47 @@ class PromptBuilder():
 
     def build_reflection_prompt(
         self,
-        messages
+        messages,
+        answer
     ):
-        return self.build(
+
+        prompt = self.build(
             REFLECTION_PROMPT,
             messages
         )
+
+        prompt.append({
+            "role": "assistant",
+            "content": answer
+        })
+
+        return prompt
+
+
+    def build_improvement_prompt(
+        self,
+        messages,
+        answer,
+        feedback
+    ):
+
+        prompt = self.build(
+            IMPROVEMENT_PROMPT,
+            messages
+        )
+
+        prompt.extend([
+            {
+                "role": "assistant",
+                "content": answer
+            },
+            {
+                "role": "system",
+                "content": f"Feedback: {feedback}"
+            }
+        ])
+
+        return prompt
 
 
     def build_summary_prompt(

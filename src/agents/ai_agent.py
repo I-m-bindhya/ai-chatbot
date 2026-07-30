@@ -1,3 +1,5 @@
+from src.agents.agent_state import AgentState
+from src.prompt.schema import CHAT_RESPONSE_SCHEMA
 from src.util.exception import AgentError
 from src.util.json_parser import AIResponse
 
@@ -15,7 +17,8 @@ class AIAgent:
         indexing_service,
         memory_important_service,
         planning_service,
-        plan_executor
+        plan_executor,
+        reflection_service
     ):
         self.provider = provider
         self.registry = registry
@@ -27,6 +30,7 @@ class AIAgent:
         self.memory_important_service = memory_important_service
         self.planning_service = planning_service
         self.plan_executor = plan_executor
+        self.reflection_service = reflection_service
 
 
     def execute_tool_call(
@@ -54,114 +58,165 @@ class AIAgent:
         user_message
     ):
         try:
-            messages = self.context_builder.build_context(
-                conversation_id,
-                user_message
-            )
+            state = AgentState.LOAD_CONTEXT
+            while state != AgentState.END:
 
-            user_message_record  = {
-                "role": "user",
-                "content": user_message
-            }      
+                messages = []
 
-            message_id = self.memory_service.save_message(
-                conversation_id,
-                **user_message_record 
-            )
+                plan = None
 
-            if self.memory_important_service.should_store(user_message):
-                self.indexing_service.index(
-                    message_id,
-                    user_message,
-                    {
-                        "conversation_id": conversation_id,
-                        "message_id": message_id,
+                response = None
+
+                final_answer = None
+
+                tool_prompt = None
+
+                tools = None
+                if state == AgentState.LOAD_CONTEXT:
+             
+                    MAX_REFLECTION_RETRIES = 2
+
+                    messages = self.context_builder.build_context(
+                        conversation_id,
+                        user_message
+                    )
+
+                    user_message_record  = {
                         "role": "user",
                         "content": user_message
-                    }
-                )
+                    }      
 
-            tools = self.tool_adapter.adapt(
-                self.registry.get_tools()
-            )
+                    message_id = self.memory_service.save_message(
+                        conversation_id,
+                        **user_message_record 
+                    )
 
-            plan = self.planning_service.create_plan(messages)
-            print(plan)
+                    if self.memory_important_service.should_store(user_message):
+                        self.indexing_service.index(
+                            message_id,
+                            user_message,
+                            {
+                                "conversation_id": conversation_id,
+                                "message_id": message_id,
+                                "role": "user",
+                                "content": user_message
+                            }
+                        )
 
-            messages = self.plan_executor.execute(
-                plan,
-                messages,
-                conversation_id
-            )
+                    state = AgentState.PLAN
 
-            iterations = 0
+                elif state == AgentState.PLAN:
 
+                        plan = self.planning_service.create_plan(messages)
 
-            while iterations < 5:
+                        selected_tools = self.registry.get_selected_tools(
+                            plan.tools
+                        )
 
-                tool_prompt = self.prompt_builder.build_tool_prompt(
-                    messages
-                )
+                        tools = self.tool_adapter.adapt(
+                            selected_tools
+                        )
 
+                        state = AgentState.EXECUTE_PLAN
 
-                response = self.provider.chat(
-                    tool_prompt,
-                    tools if iterations == 0 else None
-                )
+                elif state == AgentState.EXECUTE_PLAN:
 
+                        messages = self.plan_executor.execute(
+                            plan,
+                            messages,
+                            conversation_id
+                        )
 
-                if not response.tool_call:
-                    break
+                        state = AgentState.TOOL_LOOP
 
+                elif state == AgentState.TOOL_LOOP:
 
-                tool_message = self.execute_tool_call(
-                    response.tool_call,
-                    conversation_id
-                )
-
-
-                messages.append(tool_message)
-
-                iterations += 1
-
-
-
-            response_prompt = self.prompt_builder.build_response_prompt(
-                messages
-            )
-
-            draft_response = self.provider.chat(
-                response_prompt
-            )
-            print("draft_response", draft_response)
-
-            try:
-                reflection = self.reflection_service.review(
-                    messages,
-                    draft_response.answer
-                )
-
-                print("reflection", reflection)
-
-                final_answer = reflection.answer
-
-            except Exception:
-                final_answer = draft_response.answer
-
-            
-            assistant_message = {
-                "role": "assistant",
-                "content": final_answer
-            }
+                        iterations = 0
 
 
-            self.memory_service.save_message(
-                conversation_id,
-                **assistant_message
-            )
+                        while iterations < 5:
+
+                            tool_prompt = self.prompt_builder.build_tool_prompt(
+                                messages
+                            )
 
 
-            return final_answer
+                            response = self.provider.chat(
+                                tool_prompt,
+                                tools if iterations == 0 else None
+                            )
+
+
+                            if not response.tool_call:
+                                break
+
+
+                            tool_message = self.execute_tool_call(
+                                response.tool_call,
+                                conversation_id
+                            )
+
+
+                            messages.append(tool_message)
+
+                            iterations += 1
+
+
+                        state = AgentState.GENERATE_RESPONSE
+
+                elif state == AgentState.GENERATE_RESPONSE:
+                        response_prompt = self.prompt_builder.build(
+                            CHAT_RESPONSE_SCHEMA,
+                            messages
+                        )
+
+                        response = self.provider.chat(
+                            response_prompt
+                        )
+                        final_answer = response.answer
+                        print("final_answer", final_answer)
+
+                        state = AgentState.REFLECT
+
+                elif state == AgentState.REFLECT:
+
+                        for _ in range(MAX_REFLECTION_RETRIES + 1):
+                            reflection = self.reflection_service.review(
+                                messages=messages,
+                                answer=final_answer
+                            )
+
+                            print("reflection", reflection)
+
+                            if reflection.approved:
+                                break
+
+                            improved = self.reflection_service.improve(
+                                messages=messages,
+                                answer=final_answer,
+                                feedback=reflection.feedback
+                            )
+
+                            final_answer = improved.answer
+
+                        state = AgentState.SAVE_RESPONSE
+                elif state == AgentState.SAVE_RESPONSE:
+                        assistant_message = {
+                            "role": "assistant",
+                            "content": final_answer
+                        }
+
+
+                        self.memory_service.save_message(
+                            conversation_id,
+                            **assistant_message
+                        )
+
+
+                        response.answer = final_answer
+                        state = AgentState.END
+                return response
+
 
         except AgentError as ex:
 

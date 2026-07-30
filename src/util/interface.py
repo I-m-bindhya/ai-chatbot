@@ -1,5 +1,6 @@
 
 from pydantic import BaseModel
+from typing import List
 
 from enum import Enum
 
@@ -9,6 +10,7 @@ class PlanAction(str, Enum):
     GENERATE_ANSWER = "generate_answer"
     REFLECT = "reflect"
     SUMMARIZE_MEMORY = "summarize_memory"
+    LIST_CONVERSATION = "list_conversations"
 
 
 class PlanStep(BaseModel):
@@ -19,4 +21,9 @@ class PlanStep(BaseModel):
 
 
 class ExecutionPlan(BaseModel):
-    steps: list[PlanStep]
+    steps: List[PlanStep]
+    tools: List[str] = []
+
+class ReflectionResult(BaseModel):
+    approved: bool
+    feedback: str

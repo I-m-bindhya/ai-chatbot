@@ -19,19 +19,39 @@ Return only JSON.
 
 
 REFLECTION_PROMPT = """
-You are an AI reviewer.
+You are reviewing an AI answer.
 
-Your job is NOT to answer the user's question.
+Return ONLY valid JSON.
 
-Your job is to review an existing answer.
+{
+  "approved": true,
+  "feedback": ""
+}
 
-Use only the provided conversation context.
+If the answer is incorrect:
 
-If the answer is correct and complete,
-approve it.
+{
+  "approved": false,
+  "feedback": "Explain what should be improved."
+}
 
-If it is incomplete, inconsistent, or
-incorrect, provide an improved answer.
+Do not write markdown.
+Do not use ```json.
+Do not add explanations.
+"""
+
+IMPROVEMENT_PROMPT = """
+The previous answer has issues.
+
+Feedback:
+
+{feedback}
+
+Rewrite the answer.
+
+Do not mention the feedback.
+
+Return only the improved answer.
 """
 
 PLANNING_PROMPT = """
@@ -46,6 +66,40 @@ Each step must contain:
 - id
 - action
 - reason
+
+
+The allowed actions are:
+
+- retrieve_memory
+- call_tool
+- generate_answer
+- reflect
+- summarize_memory
+- list_conversations
+
+Never invent new action names.
+
+Available Tools
+
+list_chats
+search_memory
+
+When a tool is needed, include its name in the tools array.
+
+Example:
+
+{
+  "steps":[
+      {
+          "id":1,
+          "action":"list_conversations",
+          "reason":"User requested conversations."
+      }
+  ],
+    "tools":[
+        "list_chats"
+    ]
+}
 
 Do not answer the user's question.
 

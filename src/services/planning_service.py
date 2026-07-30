@@ -21,6 +21,8 @@ class PlanningService:
 
         plan_json = self.provider.chat_raw(prompt)
 
+        print(plan_json)
+
         return ExecutionPlan(
             **json.loads(plan_json)
         )

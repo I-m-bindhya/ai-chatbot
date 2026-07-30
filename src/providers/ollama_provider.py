@@ -41,8 +41,7 @@ class OllamaProvider:
                 messages=messages
             )
 
-            # return response.message.content
-            raise ProviderError("Testing Provider Error")
+            return response.message.content
         except Exception as ex:
             raise ProviderError(str(ex))
 

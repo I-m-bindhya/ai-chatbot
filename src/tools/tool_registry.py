@@ -12,6 +12,16 @@ class ToolRegistry:
 
     def get_tools(self):
         return list(self.tools.values())
+
+    def get_selected_tools(
+        self,
+        tool_names
+    ):
+        return [
+            self.tools[name]["schema"]
+            for name in tool_names
+            if name in self.tools
+        ]
     
     def execute(self, tool_name, arguments):
         try:

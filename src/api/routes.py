@@ -1,4 +1,7 @@
 from fastapi import APIRouter
+from src.services.reflection_service import ReflectionService
+from src.actions.action_registry import ActionRegistry
+from src.actions.list_conversations_action import ListConversationsAction
 from src.plan_executor.plan_executor import PlanExecutor
 from src.services.planning_service import PlanningService
 from src.memory.memory_important_service import MemoryImportanceService
@@ -41,13 +44,20 @@ registry = ToolRegistry()
 indexing_service = IndexingService(embedding, store)
 memory_important_service = MemoryImportanceService()
 planning_service = PlanningService(provider, builder)
-plan_executor = PlanExecutor(retrieval_service, registry)
-agent = AIAgent(provider, registry, builder, adapter, memory_service, context_builder,indexing_service, memory_important_service, planning_service, plan_executor)
+registry_action= ActionRegistry()
+reflection_service = ReflectionService(provider, builder)
+plan_executor = PlanExecutor(retrieval_service, registry_action)
+agent = AIAgent(provider, registry, builder, adapter, memory_service, context_builder,indexing_service, memory_important_service, planning_service, plan_executor, reflection_service)
 chatbot = ChatService(provider, memory_service, agent)
 chat_tools = ChatTools(chatbot)
 
 registry.register(chat_tools.get_tools())
 
+
+registry_action.register(
+    "list_conversations",
+    ListConversationsAction(memory_service)
+)
 
 @router.get("/")
 def home():
