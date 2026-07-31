@@ -1,10 +1,11 @@
 
 class ChatService:
 
-    def __init__(self, provider, memory, agent):
+    def __init__(self, provider, memory, agent, orchestrator):
         self.provider = provider
         self.memory = memory
         self.agent = agent
+        self.orchestrator = orchestrator
 
     def create_new_chat(self):
         return self.memory.create_conversation()
@@ -24,7 +25,7 @@ class ChatService:
     def load_messages(self, conversation_id):
         return self.memory.load_messages(conversation_id)
     
-    def chat(self, conversation_id, user_input):
+    def chat(self, conversation_id, user_input, multi_agent):
 
         if user_input.lower() == "/clear":
             self.memory.clear_messages(conversation_id)
@@ -34,10 +35,16 @@ class ChatService:
             len(self.memory.load_messages(conversation_id)) == 0
         )
 
-        final_reply = self.agent.run(
-            conversation_id,
-            user_input
-        )
+        if multi_agent:
+            final_reply = self.orchestrator.run(
+                conversation_id,
+                user_input
+            )
+        else:
+            final_reply = self.agent.run(
+                conversation_id,
+                user_input
+            )
 
         if is_first_message:
             title = self.provider.generate_title(user_input)

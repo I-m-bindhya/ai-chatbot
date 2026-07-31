@@ -1,4 +1,8 @@
 from fastapi import APIRouter
+from src.agents.agent_orchestrator import AgentOrchestrator
+from src.agents.coding_agent import CodingAgent
+from src.agents.memory_agent import MemoryAgent
+from src.agents.router_agent import RouterAgent
 from src.services.reflection_service import ReflectionService
 from src.actions.action_registry import ActionRegistry
 from src.actions.list_conversations_action import ListConversationsAction
@@ -28,6 +32,7 @@ adapter = ToolAdapter()
 
 class ChatRequest(BaseModel):
     message: str
+    multi_agent: bool
 
 class ConversationRequest(BaseModel):
     title: str
@@ -48,7 +53,14 @@ registry_action= ActionRegistry()
 reflection_service = ReflectionService(provider, builder)
 plan_executor = PlanExecutor(retrieval_service, registry_action)
 agent = AIAgent(provider, registry, builder, adapter, memory_service, context_builder,indexing_service, memory_important_service, planning_service, plan_executor, reflection_service)
-chatbot = ChatService(provider, memory_service, agent)
+memory_agent = MemoryAgent(agent)
+coding_agent = CodingAgent(agent)
+router_agent = RouterAgent([
+    memory_agent,
+    coding_agent
+])
+orchestrator = AgentOrchestrator(router_agent)
+chatbot = ChatService(provider, memory_service, agent, orchestrator)
 chat_tools = ChatTools(chatbot)
 
 registry.register(chat_tools.get_tools())
@@ -77,7 +89,7 @@ def load_messages(conversation_id: int):
 
 @router.post("/conversations/{conversation_id}/messages")
 def create_messages(conversation_id: int, request: ChatRequest):
-    return chatbot.chat(conversation_id, request.message)
+    return chatbot.chat(conversation_id, request.message, request.multi_agent)
 
 @router.put("/conversations/{conversation_id}")
 def rename_conversation(conversation_id, request: ConversationRequest):
