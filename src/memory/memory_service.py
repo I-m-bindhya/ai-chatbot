@@ -68,7 +68,6 @@ class MemoryService:
         return rows
 
     def save_message(self, conversation_id, role, content):
-        print("conversation id", conversation_id, role, content)
         self.cursor.execute("""
             INSERT INTO messages (conversation_id, role, content)
             VALUES (?,?,?)

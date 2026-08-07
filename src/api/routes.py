@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks
 from src.agents.profiles import CODING_PROFILE, MEMORY_PROFILE
 from src.agents.agent_orchestrator import AgentOrchestrator
 from src.agents.coding_agent import CodingAgent
@@ -63,7 +63,7 @@ router_agent = RouterAgent([
     coding_agent
 ])
 orchestrator = AgentOrchestrator(router_agent)
-chatbot = ChatService(provider, memory_service, agent, orchestrator)
+chatbot = ChatService(provider, memory_service, agent, orchestrator, MEMORY_PROFILE)
 chat_tools = ChatTools(chatbot)
 
 registry.register(chat_tools.get_tools())
@@ -91,8 +91,12 @@ def load_messages(conversation_id: int):
     return chatbot.load_messages(conversation_id)
 
 @router.post("/conversations/{conversation_id}/messages")
-def create_messages(conversation_id: int, request: ChatRequest):
-    return chatbot.chat(conversation_id, request.message, request.multi_agent)
+async def create_messages(conversation_id: int, request: ChatRequest, background_tasks: BackgroundTasks):
+    return await chatbot.chat(conversation_id, request.message, request.multi_agent, background_tasks)
+
+@router.post("/conversations/{conversation_id}/messages/stream")
+async def create_messages_stream(conversation_id: int, request: ChatRequest, background_tasks: BackgroundTasks):
+    return await chatbot.stream(conversation_id, request.message, request.multi_agent, background_tasks)
 
 @router.put("/conversations/{conversation_id}")
 def rename_conversation(conversation_id, request: ConversationRequest):

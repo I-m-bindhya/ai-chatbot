@@ -7,13 +7,24 @@ class AgentOrchestrator:
         self.router_agent = router_agent
 
 
-    def run(
+    async def run(
         self,
         conversation_id,
         user_message
     ):
 
-        return self.router_agent.route(
+        return await self.router_agent.route(
+            conversation_id,
+            user_message
+        )
+
+    async def stream(
+        self,
+        conversation_id,
+        user_message
+    ):
+
+        return await self.router_agent.stream(
             conversation_id,
             user_message
         )

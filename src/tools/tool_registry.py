@@ -18,7 +18,7 @@ class ToolRegistry:
         tool_names
     ):
         return [
-            self.tools[name]["schema"]
+            self.tools[name]
             for name in tool_names
             if name in self.tools
         ]

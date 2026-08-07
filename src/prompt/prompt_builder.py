@@ -6,10 +6,11 @@ class PromptBuilder():
     def build(
         self,
         task_prompt: str,
-        messages: list[dict]
+        messages: list[dict],
+        answer: str | None = None
     ):
 
-        return [
+        prompt = [
             {
                 "role": "system",
                 "content": SYSTEM_PROMPT
@@ -20,6 +21,14 @@ class PromptBuilder():
             },
             *messages
         ]
+
+        if answer is not None:
+            prompt.append({
+                "role": "assistant",
+                "content": answer
+            })
+
+        return prompt
 
     def build_prompt(
         self,

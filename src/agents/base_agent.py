@@ -17,12 +17,24 @@ class BaseAgent(ABC):
     ):
         pass
 
-    def execute(
+    async def execute(
         self,
         conversation_id,
         user_message
     ):
-        return self.ai_agent.run(
+        return await self.ai_agent.run(
+            conversation_id=conversation_id,
+            user_message=user_message,
+            profile=self.profile
+        )
+
+
+    async def stream(
+        self,
+        conversation_id,
+        user_message
+    ):
+        return await self.ai_agent.stream(
             conversation_id=conversation_id,
             user_message=user_message,
             profile=self.profile

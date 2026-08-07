@@ -15,12 +15,13 @@ class ReflectionService:
         self.prompt_builder = prompt_builder
 
 
-    def review(
+    async def review(
         self,
         profile,
         messages,
         answer
     ):
+        print('reflection prompt', profile.reflection_prompt)
 
         prompt = self.prompt_builder.build(
             profile.reflection_prompt,
@@ -31,7 +32,7 @@ class ReflectionService:
         print('review prompt', prompt)
 
         try:
-            plan_json = self.provider.chat_raw(prompt)
+            plan_json = await self.provider.chat_raw(prompt)
         except ProviderError:
             return ReflectionResult(approved=True, feedback="")
 
@@ -53,7 +54,7 @@ class ReflectionService:
         return ReflectionResult(approved=True, feedback="")
 
 
-    def improve(
+    async def improve(
         self,
         messages,
         answer,
@@ -66,4 +67,4 @@ class ReflectionService:
             feedback=feedback
         )
 
-        return self.provider.chat(prompt)
+        return await self.provider.chat(prompt)
