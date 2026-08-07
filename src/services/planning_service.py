@@ -15,9 +15,10 @@ class PlanningService:
 
     def create_plan(
         self,
+        profile,
         messages
     ):
-        prompt = self.prompt_builder.build_planning_prompt(messages)
+        prompt = self.prompt_builder.build(profile.planning_prompt, messages)
 
         plan_json = self.provider.chat_raw(prompt)
 

@@ -1,43 +1,36 @@
+from src.agents.agent_profile import AgentProfile
 from src.agents.base_agent import BaseAgent
 
 
 class MemoryAgent(BaseAgent):
 
-    def __init__(
-        self,
-        ai_agent
-    ):
-        self.ai_agent = ai_agent
-
-
     def can_handle(
         self,
         user_message
     ):
-
-        text = user_message.lower()
+        user_message = user_message.lower()
 
         keywords = [
             "conversation",
             "memory",
             "remember",
             "history",
-            "chat"
+            "chat",
+            "summary"
         ]
 
         return any(
-            word in text
+            word in user_message
             for word in keywords
         )
-
 
     def execute(
         self,
         conversation_id,
         user_message
     ):
-
-        return self.ai_agent.run(
+        print("MemoryAgent selected")
+        return super().execute(
             conversation_id,
             user_message
         )

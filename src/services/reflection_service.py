@@ -17,11 +17,13 @@ class ReflectionService:
 
     def review(
         self,
+        profile,
         messages,
         answer
     ):
 
-        prompt = self.prompt_builder.build_reflection_prompt(
+        prompt = self.prompt_builder.build(
+            profile.reflection_prompt,
             messages=messages,
             answer=answer
         )

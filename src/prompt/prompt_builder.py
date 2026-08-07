@@ -21,14 +21,18 @@ class PromptBuilder():
             *messages
         ]
 
-    def build_tool_prompt(
+    def build_prompt(
         self,
+        system_prompt,
         messages
     ):
-        return self.build(
-            TOOL_PROMPT,
-            messages
-        )
+        return [
+            {
+                "role": "system",
+                "content": system_prompt
+            },
+            *messages
+        ]
 
 
     def build_planning_prompt(

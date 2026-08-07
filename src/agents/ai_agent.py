@@ -55,8 +55,10 @@ class AIAgent:
     def run(
         self,
         conversation_id,
-        user_message
+        user_message,
+        profile
     ):
+        print(profile)
         try:
             state = AgentState.LOAD_CONTEXT
             while state != AgentState.END:
@@ -109,9 +111,17 @@ class AIAgent:
 
                         plan = self.planning_service.create_plan(messages)
 
-                        selected_tools = self.registry.get_selected_tools(
-                            plan.tools
-                        )
+                        allowed = set(profile.allowed_tools)
+
+                        selected = [
+                            tool
+                            for tool in plan.tools
+                            if tool in allowed
+                        ]
+
+                        print(profile.allowed_tools)
+
+                        selected_tools = self.registry.get_selected_tools(selected)
 
                         tools = self.tool_adapter.adapt(
                             selected_tools
@@ -135,11 +145,10 @@ class AIAgent:
 
 
                         while iterations < 5:
-
-                            tool_prompt = self.prompt_builder.build_tool_prompt(
+                            tool_prompt = self.prompt_builder.build_prompt(
+                                profile.system_prompt,
                                 messages
                             )
-
 
                             response = self.provider.chat(
                                 tool_prompt,

@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from src.agents.profiles import CODING_PROFILE, MEMORY_PROFILE
 from src.agents.agent_orchestrator import AgentOrchestrator
 from src.agents.coding_agent import CodingAgent
 from src.agents.memory_agent import MemoryAgent
@@ -53,8 +54,10 @@ registry_action= ActionRegistry()
 reflection_service = ReflectionService(provider, builder)
 plan_executor = PlanExecutor(retrieval_service, registry_action)
 agent = AIAgent(provider, registry, builder, adapter, memory_service, context_builder,indexing_service, memory_important_service, planning_service, plan_executor, reflection_service)
-memory_agent = MemoryAgent(agent)
-coding_agent = CodingAgent(agent)
+memory_agent = MemoryAgent(    profile=MEMORY_PROFILE,
+    ai_agent=agent)
+coding_agent = CodingAgent(    profile=MEMORY_PROFILE,
+    ai_agent=agent)
 router_agent = RouterAgent([
     memory_agent,
     coding_agent
