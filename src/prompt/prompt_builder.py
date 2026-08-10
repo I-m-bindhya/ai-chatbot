@@ -1,7 +1,11 @@
-from src.prompt.schema import IMPROVEMENT_PROMPT, PLANNING_PROMPT, REFLECTION_PROMPT, TOOL_PROMPT, SUMMARY_PROMPT
 from src.config import SYSTEM_PROMPT
+from src.prompt.prompt_registry import get_prompts
 
 class PromptBuilder():
+
+
+    def __init__(self):
+        self.prompt = get_prompts();
 
     def build(
         self,
@@ -49,7 +53,7 @@ class PromptBuilder():
         messages
     ):
         return self.build(
-            PLANNING_PROMPT,
+            self.prompt.PLANNING_PROMPT,
             messages
         )
 
@@ -61,7 +65,7 @@ class PromptBuilder():
     ):
 
         prompt = self.build(
-            REFLECTION_PROMPT,
+            self.prompt.REFLECTION_PROMPT,
             messages
         )
 
@@ -81,7 +85,7 @@ class PromptBuilder():
     ):
 
         prompt = self.build(
-            IMPROVEMENT_PROMPT,
+            self.prompt.IMPROVEMENT_PROMPT,
             messages
         )
 
@@ -104,6 +108,6 @@ class PromptBuilder():
         messages
     ):
         return self.build(
-            SUMMARY_PROMPT,
+            self.prompt.SUMMARY_PROMPT,
             messages
         )

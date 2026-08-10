@@ -2,6 +2,7 @@ from ollama import chat, AsyncClient
 from src.util.json_parser import AIResponse, JsonParser, ToolCall
 from src.config import MODEL_NAME
 from src.util.exception import ProviderError
+from src.util.retry import retry_async
 import time
 
 from src.util.usage import TokenUsage
@@ -14,11 +15,19 @@ class OllamaProvider:
 
     async def chat(self, messages, tools=None):
         start_time = time.perf_counter()
-        response = await client.chat(
-            model=MODEL_NAME,
-            messages=messages,
-            tools=tools
+        async def call_provider():
+            return await client.chat(
+                model=MODEL_NAME,
+                messages=messages,
+                tools=tools
+            )
+
+        response = await retry_async(
+            call_provider,
+            retries=3,
+            base_delay=1
         )
+        
         latency_ms = (
             time.perf_counter() - start_time
         ) * 1000
@@ -40,7 +49,8 @@ class OllamaProvider:
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
             total_tokens=total_tokens,
-            latency_ms=latency_ms
+            latency_ms=latency_ms,
+            prompt_version="v1"
         )
 
         print("reponse from model", response)

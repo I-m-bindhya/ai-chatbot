@@ -12,6 +12,8 @@ class TokenUsage(BaseModel):
 
     latency_ms: float
 
+    prompt_version: str
+
 
 
     def merge_usage(total: TokenUsage, current: TokenUsage):
@@ -22,3 +24,4 @@ class TokenUsage(BaseModel):
         total.completion_tokens += current.completion_tokens
         total.total_tokens += current.total_tokens
         total.latency_ms += current.latency_ms
+        total.prompt_version = current.prompt_version
